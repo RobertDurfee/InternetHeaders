@@ -4,7 +4,7 @@
 #include "InternetTypes.h"     //byte, word
 #include "EndianConversions.h" //SwitchEndiannWord()
 #include <string.h>            //memset()
-#include <stdio.h>             //printf()
+#include <stdlib.h>            //malloc()
 
 class EthernetHeader
 {
@@ -18,7 +18,7 @@ public:
 
 	void SwitchEndianness();
 
-	void Print();
+	char * ToString();
 
 	byte DestinationAddress[6];
 	byte SourceAddress[6];
@@ -41,9 +41,11 @@ void EthernetHeader::Assign(void * location)
 	int index = 0;
 
 	//memcpy() is not used due to compiler-specific structure padding.
-	for (int i = 0; i < 6; i++) { DestinationAddress[i] = ((byte *)location)[index]; index += sizeof(byte); }
-	for (int i = 0; i < 6; i++) { SourceAddress[i] = ((byte *)location)[index];      index += sizeof(byte); }
-	Type = *(word *)&((byte *)location)[index];                                      index += sizeof(word);
+	for (int i = 0; i < 6; i++) 
+		DestinationAddress[i] = Select<byte>(location, &index);
+	for (int i = 0; i < 6; i++) 
+		SourceAddress[i] = Select<byte>(location, &index);
+	Type = Select<word>(location, &index);
 
 	SwitchEndianness();
 }
@@ -59,12 +61,22 @@ void EthernetHeader::SwitchEndianness()
 	SwitchEndianWord(&Type);
 }
 
-void EthernetHeader::Print()
+char * EthernetHeader::ToString()
 {
-	printf("|-Ethernet:\n");
-	printf("| |-DestinationAddress: %02x-%02x-%02x-%02x-%02x-%02x\n", DestinationAddress[0], DestinationAddress[1], DestinationAddress[2], DestinationAddress[3], DestinationAddress[4], DestinationAddress[5]);
-	printf("| |-SourceAddress: %02x-%02x-%02x-%02x-%02x-%02x\n", SourceAddress[0], SourceAddress[1], SourceAddress[2], SourceAddress[3], SourceAddress[4], SourceAddress[5]);
-	printf("| `-Type: 0x%04x\n", Type);
+	char * output = (char *)malloc(109 * sizeof(char));
+
+	int index = 0;
+
+	sprintfi(output, &index, "|-Ethernet:\n");
+	sprintfi(output, &index, "| |-DestinationAddress: ");
+	for (int i = 0; i < 6; i++) 
+		sprintfi(output, &index, "%02x-", DestinationAddress[i]);
+	sprintfi(output, &(--index) /*to overwrite last '-'*/, "\n| |-SourceAddress: ");
+	for (int i = 0; i < 6; i++)	
+		sprintfi(output, &index, "%02x-", SourceAddress[i]);
+	sprintfi(output, &(--index) /*to overwrite last '-'*/, "\n| `-Type: 0x%04x\n", Type);
+
+	return output;
 }
 
 #endif

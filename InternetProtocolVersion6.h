@@ -3,8 +3,8 @@
 
 #include "InternetTypes.h"     //byte, word, dword
 #include "EndianConversions.h" //SwitchEndianWord(), SwitchEndianDword()
-#include <string.h>            //memcpy(), memset()
-#include <stdio.h>             //printf()
+#include <string.h>            //memset()
+#include <stdlib.h>            //malloc()
 
 class IPV6Header
 {
@@ -18,9 +18,14 @@ public:
 
 	void SwitchEndianness();
 
-	void Print();
+	char * ToString();
 
 	dword Versions;
+		byte Version;
+		byte DifferentiatedServicesCodePoint;
+		byte ECNCapableTransport;
+		byte ECNCE;
+		dword FlowLabel;
 	word PayloadLength;
 #define IPV6_TCP		0x06
 #define IPV6_UDP		0x11
@@ -41,11 +46,29 @@ IPV6Header::IPV6Header(void * location)
 }
 void IPV6Header::Assign(void * location)
 {
-	memcpy(this, location, sizeof(IPV6Header));
+	int index = 0;
+
+	//memcpy() is not used due to compiler-specific structure padding.
+	Versions = Select<dword>(location, &index);
+	PayloadLength = Select<word>(location, &index);
+	NextProtocol = Select<byte>(location, &index);
+	HopLimit = Select<byte>(location, &index);
+	for (int i = 0; i < 8; i++)
+		SourceAddress[i] = Select<word>(location, &index);
+	for (int i = 0; i < 8; i++)
+		DestinationAddress[i] = Select<word>(location, &index);
+
 	SwitchEndianness();
+	
+	Version = (Versions >> 28) & 0xF;
+	DifferentiatedServicesCodePoint = (Versions >> 22) & 0x3F;
+	ECNCapableTransport = (Versions >> 21) & 0x1;
+	ECNCE = (Versions >> 20) & 0x1;
+	FlowLabel = Versions & 0xFFFFF;
 }
 void IPV6Header::Clear()
 {
+	//memset() can be used as padding can be zero
 	memset(this, 0, sizeof(IPV6Header));
 }
 void IPV6Header::SwitchEndianness()
@@ -58,26 +81,31 @@ void IPV6Header::SwitchEndianness()
 		SwitchEndianWord(&DestinationAddress[i]);
 	}
 }
-void IPV6Header::Print()
+char * IPV6Header::ToString()
 {
-	byte Version = (Versions >> 28) & 0xF;
-	byte DifferentiatedServicesCodePoint = (Versions >> 22) & 0x3F;
-	byte ECNCapableTransport = (Versions >> 21) & 0x1;
-	byte ECNCE = (Versions >> 20) & 0x1;
-	dword FlowLabel = Versions & 0xFFFFF;
+	char * output = (char *)malloc(321 * sizeof(char));
 
-	printf("|-IPv6:\n");
-	printf("| |-Versions: 0x%08x\n", Versions);
-	printf("| | |-Version: 0x%01x\n", Version);
-	printf("| | |-DSCP: 0x%02x\n", DifferentiatedServicesCodePoint);
-	printf("| | |-ECT: 0x%01x\n", ECNCapableTransport);
-	printf("| | |-CE: 0x%01x\n", ECNCE);
-	printf("| | `-FlowLabel: 0x%05x\n", FlowLabel);
-	printf("| |-PayloadLength: 0x%04x\n", PayloadLength);
-	printf("| |-NextProtocol: 0x%02x\n", NextProtocol);
-	printf("| |-HopLimit: 0x%02x\n", HopLimit);
-	printf("| |-SourceAddress: %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x\n", SourceAddress[0], SourceAddress[1], SourceAddress[2], SourceAddress[3], SourceAddress[4], SourceAddress[5], SourceAddress[6], SourceAddress[7]);
-	printf("| `-DestinationAddress: %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x\n", DestinationAddress[0], DestinationAddress[1], DestinationAddress[2], DestinationAddress[3], DestinationAddress[4], DestinationAddress[5], DestinationAddress[6], DestinationAddress[7]);
+	int index = 0;
+
+	sprintfi(output, &index, "|-IPv6:\n");
+	sprintfi(output, &index, "| |-Versions: 0x%08x\n", Versions);
+	sprintfi(output, &index, "| | |-Version: 0x%01x\n", Version);
+	sprintfi(output, &index, "| | |-DSCP: 0x%02x\n", DifferentiatedServicesCodePoint);
+	sprintfi(output, &index, "| | |-ECT: 0x%01x\n", ECNCapableTransport);
+	sprintfi(output, &index, "| | |-CE: 0x%01x\n", ECNCE);
+	sprintfi(output, &index, "| | `-FlowLabel: 0x%05x\n", FlowLabel);
+	sprintfi(output, &index, "| |-PayloadLength: 0x%04x\n", PayloadLength);
+	sprintfi(output, &index, "| |-NextProtocol: 0x%02x\n", NextProtocol);
+	sprintfi(output, &index, "| |-HopLimit: 0x%02x\n", HopLimit);
+	sprintfi(output, &index, "| |-SourceAddress: ");
+	for(int i = 0; i < 8; i++)
+		sprintfi(output, &index, "%04x:", SourceAddress[i]);
+	sprintfi(output, &(--index), "\n| `-DestinationAddress: "); 
+	for(int i = 0; i < 8; i++)
+		sprintfi(output, &index, "%04x:", DestinationAddress[i]);
+	sprintfi(output, &(--index), "\n");
+
+	return output;
 }
 
 #endif

@@ -4,7 +4,7 @@
 #include "InternetTypes.h"     //byte, word
 #include "EndianConversions.h" //SwitchEndianWord()
 #include <string.h>            //memset()
-#include <stdio.h>             //printf()
+#include <stdlib.h>            //malloc()
 
 class ARPHeader
 {
@@ -18,7 +18,7 @@ public:
 
 	void SwitchEndianness();
 
-	void Print();
+	char * ToString();
 
 #define ARP_ETHERNET 0x01
 #define ARP_IEEE_802 0x06
@@ -50,15 +50,19 @@ void ARPHeader::Assign(void * location)
 	int index = 0;
 
 	//memcpy() is not used due to compiler-specific structure padding
-	HardwareType = *(word *)&((byte *)location)[index];                             index += sizeof(word);
-	ProtocolType = *(word *)&((byte *)location)[index];                             index += sizeof(word);
-	HardwareAddressLen = ((byte *)location)[index];                                 index += sizeof(byte);
-	ProtocolAddressLen = ((byte *)location)[index];                                 index += sizeof(byte);
-	OpCode = *(word *)&((byte *)location)[index];                                   index += sizeof(word);
-	for (int i = 0; i < 6; i++) { SenderMACAddress[i] = ((byte *)location)[index];  index += sizeof(byte); }
-	for (int i = 0; i < 4; i++) { SenderIPv4Address[i] = ((byte *)location)[index]; index += sizeof(byte); }
-	for (int i = 0; i < 6; i++) { TargetMACAddress[i] = ((byte *)location)[index];  index += sizeof(byte); }
-	for (int i = 0; i < 4; i++) { TargetIPv4Address[i] = ((byte *)location)[index]; index += sizeof(byte); }
+	HardwareType = Select<word>(location, &index); 
+	ProtocolType = Select<word>(location, &index);
+	HardwareAddressLen = Select<byte>(location, &index);
+	ProtocolAddressLen = Select<byte>(location, &index);
+	OpCode = Select<word>(location, &index);
+	for (int i = 0; i < 6; i++) 
+		SenderMACAddress[i] = Select<byte>(location, &index);
+	for (int i = 0; i < 4; i++) 
+		SenderIPv4Address[i] = Select<byte>(location, &index);
+	for (int i = 0; i < 6; i++) 
+		TargetMACAddress[i] = Select<byte>(location, &index);
+	for (int i = 0; i < 4; i++) 
+		TargetIPv4Address[i] = Select<byte>(location, &index);
 
 	SwitchEndianness();
 }
@@ -73,18 +77,33 @@ void ARPHeader::SwitchEndianness()
 	SwitchEndianWord(&ProtocolType);
 	SwitchEndianWord(&OpCode);
 }
-void ARPHeader::Print()
+char * ARPHeader::ToString()
 {
-	printf("|-ARP:\n");
-	printf("| |-HardwareType: 0x%04x\n", HardwareType);
-	printf("| |-ProtocolType: 0x%04x\n", ProtocolType);
-	printf("| |-HardwareAddressLength: 0x%02x\n", HardwareAddressLen);
-	printf("| |-ProtocolAddressLength: 0x%02x\n", ProtocolAddressLen);
-	printf("| |-Opcode: 0x%04x\n", OpCode);
-	printf("| |-SenderMACAddress: %02x-%02x-%02x-%02x-%02x-%02x\n", SenderMACAddress[0], SenderMACAddress[1], SenderMACAddress[2], SenderMACAddress[3], SenderMACAddress[4], SenderMACAddress[5]);
-	printf("| |-SenderIPv4Addres: %d.%d.%d.%d\n", SenderIPv4Address[0], SenderIPv4Address[1], SenderIPv4Address[2], SenderIPv4Address[3]);
-	printf("| |-TargetMACAddress: %02x-%02x-%02x-%02x-%02x-%02x\n", TargetMACAddress[0], TargetMACAddress[1], TargetMACAddress[2], TargetMACAddress[3], TargetMACAddress[4], TargetMACAddress[5]);
-	printf("| `-TargetIPv4Addres: %d.%d.%d.%d\n", TargetIPv4Address[0], TargetIPv4Address[1], TargetIPv4Address[2], TargetIPv4Address[3]);
+	char * output = (char *)malloc(299 * sizeof(char));
+
+	int index = 0;
+
+	sprintfi(output, &index, "|-ARP:\n");
+	sprintfi(output, &index, "| |-HardwareType: 0x%04x\n", HardwareType);
+	sprintfi(output, &index, "| |-ProtocolType: 0x%04x\n", ProtocolType);
+	sprintfi(output, &index, "| |-HardwareAddressLength: 0x%02x\n", HardwareAddressLen);
+	sprintfi(output, &index, "| |-ProtocolAddressLength: 0x%02x\n", ProtocolAddressLen);
+	sprintfi(output, &index, "| |-Opcode: 0x%04x\n", OpCode);
+	sprintfi(output, &index, "| |-SenderMACAddress: ");
+	for (int i = 0; i < 6; i++)
+		sprintfi(output, &index, "%02x-", SenderMACAddress[i]);
+	sprintfi(output, &(--index), "\n| |-SenderIPv4Address: ");
+	for (int i = 0; i < 4; i++)
+		sprintfi(output, &index, "%03d.", SenderIPv4Address[i]);
+	sprintfi(output, &(--index), "\n| |-TargetMACAddress: ");
+	for (int i = 0; i < 6; i++)
+		sprintfi(output, &index, "%02x-", TargetMACAddress[i]);
+	sprintfi(output, &(--index), "\n| `-TargetIPv4Address: ");
+	for(int i = 0; i < 4; i++)
+		sprintfi(output, &index, "%03d.", TargetIPv4Address[i]);
+	sprintfi(output, &(--index), "\n");
+
+	return output;
 }
 
 #endif

@@ -3,8 +3,8 @@
 
 #include "InternetTypes.h"     //word
 #include "EndianConversions.h" //SwitchEndianWord()
-#include <string.h>            //memcpy(), memset()
-#include <stdio.h>             //printf()
+#include <string.h>            //memset()
+#include <stdlib.h>            //malloc()
 
 class UDPHeader
 {
@@ -18,7 +18,7 @@ public:
 
 	void SwitchEndianness();
 
-	void Print();
+	char * ToString();
 
 #define UDP_FTP_DATA_PORT 20
 #define UDP_FTP_CONTROL_PORT 21
@@ -60,11 +60,19 @@ UDPHeader::UDPHeader(void * location)
 }
 void UDPHeader::Assign(void * location)
 {
-	memcpy(this, location, sizeof(UDPHeader));
+	int index = 0;
+
+	//memcpy() is not used due to compiler-specific structure padding.
+	SourcePort = Select<word>(location, &index);
+	DestinationPort = Select<word>(location, &index);
+	Length = Select<word>(location, &index);
+	Checksum = Select<word>(location, &index);
+
 	SwitchEndianness();
 }
 void UDPHeader::Clear()
 {
+	//memset() can be used as padding can be zero
 	memset(this, 0, sizeof(UDPHeader));
 }
 void UDPHeader::SwitchEndianness()
@@ -74,13 +82,19 @@ void UDPHeader::SwitchEndianness()
 	SwitchEndianWord(&Length);
 	SwitchEndianWord(&Checksum);
 }
-void UDPHeader::Print()
+char * UDPHeader::ToString()
 {
-	printf("|-UDP:\n");
-	printf("| |-SourcePort: 0x%02x\n", SourcePort);
-	printf("| |-DestinationPort: 0x%02x\n", DestinationPort);
-	printf("| |-Length: 0x%02x\n", Length);
-	printf("| `-Checksum: 0x%02x\n", Checksum);
+	char * output = (char *)malloc(99 * sizeof(char));
+
+	int index = 0;
+
+	sprintfi(output, &index, "|-UDP:\n");
+	sprintfi(output, &index, "| |-SourcePort: 0x%02x\n", SourcePort);
+	sprintfi(output, &index, "| |-DestinationPort: 0x%02x\n", DestinationPort);
+	sprintfi(output, &index, "| |-Length: 0x%02x\n", Length);
+	sprintfi(output, &index, "| `-Checksum: 0x%02x\n", Checksum);
+
+	return output;
 }
 
 #endif

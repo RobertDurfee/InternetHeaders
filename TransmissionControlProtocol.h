@@ -3,8 +3,8 @@
 
 #include "InternetTypes.h"     //byte, word, dword
 #include "EndianConversions.h" //SwitchEndianWord(), SwitchEndianDword()
-#include <string.h>            //memcpy(), memset()
-#include <stdio.h>             //printf()
+#include <string.h>            //memset()
+#include <stdlib.h>            //malloc()
 
 class TCPHeader
 {
@@ -18,7 +18,7 @@ public:
 
 	void SwitchEndianness();
 
-	void Print();
+	char * ToString();
 
 #define TCP_FTP_DATA_PORT 20
 #define TCP_FTP_CONTROL_PORT 21
@@ -49,7 +49,6 @@ public:
 	dword SequenceNumber;
 	dword AcknowledgementNumber;
 	byte DataOffset;
-	byte Flags;
 #define TCP_FIN  0x01
 #define TCP_SYN  0x02
 #define TCP_RST  0x04
@@ -58,6 +57,15 @@ public:
 #define TCP_URG  0x20
 #define TCP_ECE  0x40
 #define TCP_CWR  0x80
+	byte Flags;
+		byte FIN;
+		byte SYN;
+		byte RST;
+		byte PSH;
+		byte ACK;
+		byte URG;
+		byte ECE;
+		byte CWR;
 	word Window;
 	word Checksum;
 	word UrgentPointer;
@@ -73,8 +81,29 @@ TCPHeader::TCPHeader(void * location)
 }
 void TCPHeader::Assign(void * location)
 {
-	memcpy(this, location, sizeof(TCPHeader));
+	int index = 0;
+
+	//memcpy() is not used due to compiler-specific structure padding.
+	SourcePort = Select<word>(location, &index);
+	DestinationPort = Select<word>(location, &index);
+	SequenceNumber = Select<dword>(location, &index);
+	AcknowledgementNumber = Select<dword>(location, &index);
+	DataOffset = Select<byte>(location, &index);
+	Flags = Select<byte>(location, &index);
+	Window = Select<word>(location, &index);
+	Checksum = Select<word>(location, &index);
+	UrgentPointer = Select<word>(location, &index);
+
 	SwitchEndianness();
+	
+	FIN = Flags & 0x1;
+	SYN = (Flags >> 1) & 0x1;
+	RST = (Flags >> 2) & 0x1;
+	PSH = (Flags >> 3) & 0x1;
+	ACK = (Flags >> 4) & 0x1;
+	URG = (Flags >> 5) & 0x1;
+	ECE = (Flags >> 6) & 0x1;
+	CWR = (Flags >> 7) & 0x1;
 }
 void TCPHeader::Clear()
 {
@@ -90,35 +119,32 @@ void TCPHeader::SwitchEndianness()
 	SwitchEndianWord(&Checksum);
 	SwitchEndianWord(&UrgentPointer);
 }
-void TCPHeader::Print()
+char * TCPHeader::ToString()
 {
-	byte FIN = Flags & 0x1;
-	byte SYN = (Flags >> 1) & 0x1;
-	byte RST = (Flags >> 2) & 0x1;
-	byte PUSH = (Flags >> 3) & 0x1;
-	byte ACK = (Flags >> 4) & 0x1;
-	byte URG = (Flags >> 5) & 0x1;
-	byte ECE = (Flags >> 6) & 0x1;
-	byte CWR = (Flags >> 7) & 0x1;
+	char * output = (char *)malloc(359 * sizeof(char));
 
-	printf("|-TCP:\n");
-	printf("| |-SourcePort: 0x%02x\n", SourcePort);
-	printf("| |-DestinationPort: 0x%02x\n", DestinationPort);
-	printf("| |-SeqeunceNumber: 0x%08x\n", SequenceNumber);
-	printf("| |-AcknowledgementNumber: 0x%08x\n", AcknowledgementNumber);
-	printf("| |-DataOffset: 0x%02x\n", DataOffset);
-	printf("| |-Flags: 0x%02x\n", Flags);
-	printf("| | |-FIN: 0x%01x\n", FIN);
-	printf("| | |-SYN: 0x%01x\n", SYN);
-	printf("| | |-RST: 0x%01x\n", RST);
-	printf("| | |-PUSH: 0x%01x\n", PUSH);
-	printf("| | |-ACK: 0x%01x\n", ACK);
-	printf("| | |-URG: 0x%01x\n", URG);
-	printf("| | |-ECE: 0x%01x\n", ECE);
-	printf("| | `-CWR: 0x%01x\n", CWR);
-	printf("| |-Window: 0x%04x\n", Window);
-	printf("| |-Checksum: 0x%04x\n", Checksum);
-	printf("| `-UrgentPointer: 0x%04x\n", UrgentPointer);
+	int index = 0;
+
+	sprintfi(output, &index, "|-TCP:\n");
+	sprintfi(output, &index, "| |-SourcePort: 0x%02x\n", SourcePort);
+	sprintfi(output, &index, "| |-DestinationPort: 0x%02x\n", DestinationPort);
+	sprintfi(output, &index, "| |-SeqeunceNumber: 0x%08x\n", SequenceNumber);
+	sprintfi(output, &index, "| |-AcknowledgementNumber: 0x%08x\n", AcknowledgementNumber);
+	sprintfi(output, &index, "| |-DataOffset: 0x%02x\n", DataOffset);
+	sprintfi(output, &index, "| |-Flags: 0x%02x\n", Flags);
+	sprintfi(output, &index, "| | |-FIN: 0x%01x\n", FIN);
+	sprintfi(output, &index, "| | |-SYN: 0x%01x\n", SYN);
+	sprintfi(output, &index, "| | |-RST: 0x%01x\n", RST);
+	sprintfi(output, &index, "| | |-PSH: 0x%01x\n", PSH);
+	sprintfi(output, &index, "| | |-ACK: 0x%01x\n", ACK);
+	sprintfi(output, &index, "| | |-URG: 0x%01x\n", URG);
+	sprintfi(output, &index, "| | |-ECE: 0x%01x\n", ECE);
+	sprintfi(output, &index, "| | `-CWR: 0x%01x\n", CWR);
+	sprintfi(output, &index, "| |-Window: 0x%04x\n", Window);
+	sprintfi(output, &index, "| |-Checksum: 0x%04x\n", Checksum);
+	sprintfi(output, &index, "| `-UrgentPointer: 0x%04x\n", UrgentPointer);
+
+	return output;
 }
 
 #endif
