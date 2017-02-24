@@ -73,7 +73,7 @@ public:
 
 TCPHeader::TCPHeader()
 {
-
+	Clear();
 }
 TCPHeader::TCPHeader(void * location)
 {

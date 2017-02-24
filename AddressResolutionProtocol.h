@@ -39,7 +39,7 @@ public:
 
 ARPHeader::ARPHeader()
 {
-
+	Clear();
 }
 ARPHeader::ARPHeader(void * location)
 {

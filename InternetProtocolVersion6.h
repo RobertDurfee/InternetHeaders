@@ -38,7 +38,7 @@ public:
 
 IPV6Header::IPV6Header()
 {
-
+	Clear();
 }
 IPV6Header::IPV6Header(void * location)
 {

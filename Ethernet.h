@@ -29,7 +29,7 @@ public:
 };
 EthernetHeader::EthernetHeader()
 {
-
+	Clear();
 }
 EthernetHeader::EthernetHeader(void * location)
 {

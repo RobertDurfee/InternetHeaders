@@ -45,7 +45,7 @@ public:
 
 IPV4Header::IPV4Header()
 {
-
+	Clear();
 }
 IPV4Header::IPV4Header(void * location)
 {

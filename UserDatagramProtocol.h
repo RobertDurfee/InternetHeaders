@@ -52,7 +52,7 @@ public:
 
 UDPHeader::UDPHeader()
 {
-
+	Clear();
 }
 UDPHeader::UDPHeader(void * location)
 {
