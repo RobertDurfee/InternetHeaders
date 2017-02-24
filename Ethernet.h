@@ -2,6 +2,7 @@
 #define ETHERNET_HEADER
 
 #include "InternetTypes.h"     //byte, word
+#include "InternetFunctions.h" //Select<>(), sprintfi()
 #include "EndianConversions.h" //SwitchEndiannWord()
 #include <string.h>            //memset()
 #include <stdlib.h>            //malloc()

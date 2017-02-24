@@ -2,6 +2,7 @@
 #define INTERNET_HEADER
 
 #include "InternetTypes.h"
+#include "InternetFunctions.h"
 #include "EndianConversions.h"
 
 #include "Ethernet.h"

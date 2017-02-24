@@ -2,6 +2,7 @@
 #define INTERNET_PROTOCOL_VERSION_6_HEADER
 
 #include "InternetTypes.h"     //byte, word, dword
+#include "InternetFunctions.h" //Select<>(), sprintfi()
 #include "EndianConversions.h" //SwitchEndianWord(), SwitchEndianDword()
 #include <string.h>            //memset()
 #include <stdlib.h>            //malloc()

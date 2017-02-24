@@ -2,6 +2,7 @@
 #define USER_DATAGRAM_PROTOCOL_HEADER
 
 #include "InternetTypes.h"     //word
+#include "InternetFunctions.h" //Select<>(), sprintfi()
 #include "EndianConversions.h" //SwitchEndianWord()
 #include <string.h>            //memset()
 #include <stdlib.h>            //malloc()

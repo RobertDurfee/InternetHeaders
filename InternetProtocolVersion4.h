@@ -2,6 +2,7 @@
 #define INTERNET_PROTOCOL_VERSION_4_HEADER
 
 #include "InternetTypes.h"     //byte, word
+#include "InternetFunctions.h" //Select<>(), sprintfi()
 #include "EndianConversions.h" //SwitchEndianWord()
 #include <string.h>            //memset()
 #include <stdlib.h>            //malloc()
