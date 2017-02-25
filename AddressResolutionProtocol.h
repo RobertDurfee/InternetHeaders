@@ -7,6 +7,8 @@
 #include <string.h>            //memset()
 #include <stdlib.h>            //malloc()
 
+#define ARP_HEADER_SIZE 28
+
 class ARPHeader
 {
 public:

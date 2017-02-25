@@ -7,6 +7,8 @@
 #include <string.h>            //memset()
 #include <stdlib.h>            //malloc()
 
+#define IPV6_HEADER_SIZE 40
+
 class IPV6Header
 {
 public:

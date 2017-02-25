@@ -7,6 +7,8 @@
 #include <string.h>            //memset()
 #include <stdlib.h>            //malloc()
 
+#define ETHERNET_HEADER_SIZE 14
+
 class EthernetHeader
 {
 public:

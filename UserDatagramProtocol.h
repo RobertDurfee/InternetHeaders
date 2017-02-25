@@ -7,6 +7,8 @@
 #include <string.h>            //memset()
 #include <stdlib.h>            //malloc()
 
+#define UDP_HEADER_SIZE 8
+
 class UDPHeader
 {
 public:

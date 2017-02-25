@@ -7,6 +7,8 @@
 #include <string.h>            //memset()
 #include <stdlib.h>            //malloc()
 
+#define TCP_HEADER_SIZE 20
+
 class TCPHeader
 {
 public:
